@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Box, Button, Flex, Input, Text, VStack, useToast } from "@chakra-ui/react";
+import { Box, Button, ButtonGroup, Flex, Input, Text, VStack, useToast } from "@chakra-ui/react";
 import { FaPlus, FaTrash } from "react-icons/fa";
 import { client } from "lib/crud";
 
@@ -53,6 +53,25 @@ const Index = () => {
     }
   };
 
+  const updateNote = async (id, newText) => {
+    const updatedNotes = notes.map((note) => {
+      if (note.id === id) {
+        return { ...note, text: newText };
+      }
+      return note;
+    });
+    setNotes(updatedNotes);
+    const success = await client.set(id, { text: newText, createdAt: new Date().toISOString() });
+    if (success) {
+      toast({
+        title: "Note updated",
+        status: "success",
+        duration: 2000,
+        isClosable: true,
+      });
+    }
+  };
+
   return (
     <Box p={5}>
       <Flex mb={5}>
@@ -64,10 +83,15 @@ const Index = () => {
       <VStack spacing={4}>
         {notes.map((note) => (
           <Flex key={note.id} p={4} w="100%" borderWidth="1px" borderRadius="lg" alignItems="center" justifyContent="space-between">
-            <Text>{note.text}</Text>
-            <Button onClick={() => deleteNote(note.id)} colorScheme="red">
-              <FaTrash />
-            </Button>
+            {note.isEditing ? <Input value={note.text} onChange={(e) => updateNote(note.id, e.target.value)} /> : <Text>{note.text}</Text>}
+            <ButtonGroup>
+              <Button onClick={() => deleteNote(note.id)} colorScheme="red">
+                <FaTrash />
+              </Button>
+              <Button onClick={() => setNotes(notes.map((n) => (n.id === note.id ? { ...n, isEditing: !n.isEditing } : n)))} colorScheme="blue">
+                {note.isEditing ? "Save" : "Edit"}
+              </Button>
+            </ButtonGroup>
           </Flex>
         ))}
       </VStack>
